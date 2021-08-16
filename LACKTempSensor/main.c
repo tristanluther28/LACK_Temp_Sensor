@@ -33,7 +33,7 @@
 /******************** Macros *****************************/
 
 #ifndef F_CPU
-#define F_CPU 16000000UL //Set clock speed to 16MHz
+#define F_CPU 1000000UL //Set clock speed to 1MHz
 #endif
 
 #define BIT_SET(byte, bit) (byte & (1<<bit))
@@ -41,64 +41,50 @@
 /******************** Includes ***************************/
 
 #include <avr/io.h>
+#include <avr/interrupt.h>
 #include <util/delay.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include "USART.h"
 #include "LM335.h"
-#include "MAX7219.h"
+#include "LTC4627JS.h"
 
 /******************* Globals *****************************/
 
 //Add volatile keyword so the compiler won't optimize these variables out if only used in ISR
 //Add static keyword so the compiler won't erase this memory once we enter a new stack frame
+volatile uint16_t display_temp;
 
 /******************** Functions **************************/
 
 
 /******************** Interrupt Service Routines *********/
-
+ISR(TIMER0_OVF_vect){
+	LTC4627JS_DisplayTemp(display_temp, FAHRENHEIT);
+}
 
 /******************** Main *******************************/
 int main(void)
 {
 	//Temperature value
-	float temperature;
-	uint16_t display_temp;
-	
-	//DEBUG output string buffer
-	char buffer[20], float_[10];;
-	
-	//Debugging LED
-	DDRB |= (1<<PB5);
-	PORTB |= (0<<PB5);
+	float temperature = 0.0;
 	
 	/* Initialize the LM335 */
 	LM335_Init();
 	
-	/* Initialize the MAX7219 to control the 4-digit 7-segment display */
-	MAX7219_Init();
+	/* Initialize the LTC4627JS to control the 4-digit 7-segment display */
+	LTC4627JS_Init();
 	
-	/* Initialize the USART debugging output */
-	USART_Init(9600);
-	
-	//Check Serial is working
-	USART_WriteString("Texas Instrument's LM335\n\r");
+	/* Allow for Global Interrupts */
+	sei();
 	
 	/* State machine loop */
 	while (1)
 	{
-		//Get the current temp
-		temperature = LM335_Read(CELSUIS);
-		//DEBUG Output the temp to the console
-		dtostrf(temperature, 3, 2, float_);
-		sprintf(buffer,"Temp: %s C\n\r",float_);
-		USART_WriteString(buffer);
+		//Get the current temp from average of 10 readings
+		for(int i = 0; i < 30; i++){
+			temperature += LM335_Read(FAHRENHEIT);
+		}
+		temperature = temperature/30;
 		//Output the number to the seven segment display rounded to the nearest tens place
 		//Push the first decimal up one position so it will display
-		display_temp = (uint16_t)temperature*10;
-		MAX7219_Display4Digit(display_temp);
-		_delay_ms(2000);
+		display_temp = (uint16_t)temperature;
 	}
 }
-

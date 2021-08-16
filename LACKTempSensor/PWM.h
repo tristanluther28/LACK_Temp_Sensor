@@ -1,9 +1,9 @@
 //-----------------------------------------------------------------------------
 //
-//  LM335.h
+//  PWM_atmega328p.c
 //
-//  Swallowtail LM335 Firmware
-//  AVR LM335 Firmware
+//  Swallowtail PWM Firmware for ATmega88P
+//  AVR (ATmega98P) PWM Firmware
 //
 //  Copyright (c) 2021 Swallowtail Electronics
 //
@@ -30,21 +30,22 @@
 //
 //-----------------------------------------------------------------------------
 
-/******************** Include Guard **************************/
+/******************** Macros *****************************/
+#ifndef PWM_H_
+#define PWM_H_
 
-#ifndef LM335_H_
-#define LM335_H_
-
-#include <avr/io.h>
-#include "ADC.h"
-
-/******************* Macros **********************************/
+#ifndef F_CPU
+#define F_CPU 1000000UL //Set clock speed to 1MHz
+#endif
 
 #define BIT_SET(byte, bit) (byte & (1<<bit))
 
+/******************** Includes ***************************/
+
+#include <avr/io.h>
+
 /******************* Function Declarations *******************/
+void PWM_Init();
+void PWM_timer1_a(uint8_t);
 
-void LM335_Init();
-float LM335_Read(enum tempunits);
-
-#endif
+#endif /* PWM_H_ */

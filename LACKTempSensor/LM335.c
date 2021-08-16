@@ -51,6 +51,7 @@ float LM335_Read(enum tempunits units){
 	float value;
 	//Get the current value from the 10-bit ADC
 	uint16_t raw_value = ADC_Value();
+	raw_value = 1024 - raw_value; //Get the reverse of the range of numbers
 	//Return in the specified units
 	switch(units){
 		case KELVIN:
@@ -58,11 +59,11 @@ float LM335_Read(enum tempunits units){
 			return value;
 		break;
 		case CELSUIS:
-			value = (raw_value * 0.4882) + 273.15;
+			value = (raw_value * 0.4882) - 273.15;
 			return value;
 		break;
 		case FAHRENHEIT:
-			value = (((raw_value * 0.4882) + 273.15) * 1.8) + 32;
+			value = (((raw_value * 0.4882) - 273.15) * 1.8) + 32;
 			return value;
 		break;
 	}

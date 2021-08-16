@@ -1,9 +1,9 @@
 //-----------------------------------------------------------------------------
 //
-//  LM335.h
+//  PWM_atmega328p.c
 //
-//  Swallowtail LM335 Firmware
-//  AVR LM335 Firmware
+//  Swallowtail PWM Firmware for ATmega88P
+//  AVR (ATmega98P) PWM Firmware
 //
 //  Copyright (c) 2021 Swallowtail Electronics
 //
@@ -30,21 +30,46 @@
 //
 //-----------------------------------------------------------------------------
 
-/******************** Include Guard **************************/
+/******************** Macros *****************************/
 
-#ifndef LM335_H_
-#define LM335_H_
+/******************** Includes ***************************/
 
-#include <avr/io.h>
-#include "ADC.h"
+#include "PWM.h"
 
-/******************* Macros **********************************/
+/******************* Globals *****************************/
 
-#define BIT_SET(byte, bit) (byte & (1<<bit))
+//Add volatile keyword so the compiler won't optimize these variables out if only used in ISR
 
-/******************* Function Declarations *******************/
+/******************** Functions **************************/
 
-void LM335_Init();
-float LM335_Read(enum tempunits);
+//Initialize the PWM Output
+void PWM_Init(){
+	//Enable hardware outputs
+	DDRB |= (1<<PB1);
+	//Set the default values for outputs to zero and inputs to have pull-up resistors
+	PORTB |= (0<<PB1);
+	//Enable Timer 0
+	//Enable PWM Output 0A and 0B and Fast PWM
+	TCCR0A |= (0<<COM0A1) | (0<<COM0B1) | (1<<WGM01) | (0<<WGM00);
+	//Enable Clock Divider/64
+	TCCR0B |= (1<<CS01) | (1<<CS00);
+	TIMSK0 |= (1<<TOIE0);
+	//Max counter value possible set though OCR0A & OCR0B
+	OCR0A = 0xFF;
+	OCR0B = 0xFF;
+	//Enable Timer 1
+	//Enable PWM Output 1A and 1B and Fast PWM
+	TCCR1A = (1<<COM1A1) | (1<<COM1B1) | (1<<WGM10);
+	//Enable Clock Divider/64
+	TCCR1B = (1<<CS11) | (1<<CS10) | (1<<WGM12);
+	//Max PWM value possible set though OCR1A & OCR1B
+	OCR1A = 0x00;
+	OCR1B = 0x00;
+	return; //Return to call point
+}
+//Change timer 1 a value
+void PWM_timer1_a(uint8_t value){
+	OCR1A = value;
+}
 
-#endif
+/******************** Interrupt Service Routines *********/

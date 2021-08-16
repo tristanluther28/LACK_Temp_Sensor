@@ -42,14 +42,39 @@
 //Initialize the ADC
 void ADC_Init(){
 	//Use VCC for the analog reference voltage, right justify result, only use ADC0 for input
-	ADMUX = (0<<REFS1)|(0<<REFS0)|(0<<ADLAR)|(0<<MUX3)|(0<<MUX2)|(0<<MUX1)|(0<<MUX0);
-	//Enable ADC, use for single conversion mode, clk/8 prescaler
-	ADCSRA = (1<<ADEN)|(0<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
+	ADMUX = (1<<REFS1)|(0<<REFS0)|(0<<ADLAR)|(0<<MUX3)|(0<<MUX2)|(0<<MUX1)|(1<<MUX0);
+	//Enable ADC, use for single conversion mode, clk/128 prescaler
+	ADCSRA = (1<<ADEN)|(1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
 	return; //Return to call point
+}
+
+float ADC_Get_Temp(enum tempunits units){
+	//Select ADC8 (MUX: 1000) and 1.1V internal voltage reference
+	ADMUX = (1<<REFS1)|(1<<REFS0)|(0<<ADLAR)|(1<<MUX3)|(0<<MUX2)|(0<<MUX1)|(0<<MUX0);
+	//Pass bit in to get request measurement
+	ADCSRA |= (1<<ADSC);
+	//Wait for conversion
+	while(BIT_SET(ADCSRA, ADSC));
+	//Return the 10-bit right justified result along with the factory calibrated offset
+	float value = ((ADCL|(ADCH<<8))-TEMP_CAL_OFFSET);
+	switch(units){
+		case KELVIN:
+			value = value + 273.15;
+			break;
+		case FAHRENHEIT:
+			value = (value*1.8) + 32;
+			break;
+		default:
+			//Centigrade or unknown
+			break;
+	}
+	return value;
 }
 
 //Reads the value from the ADC
 uint16_t ADC_Value(){
+	//Use VCC for the analog reference voltage, right justify result, only use ADC0 for input
+	ADMUX = (1<<REFS1)|(0<<REFS0)|(0<<ADLAR)|(0<<MUX3)|(0<<MUX2)|(0<<MUX1)|(1<<MUX0);
 	//Pass bit in to get request measurement
 	ADCSRA |= (1<<ADSC);
 	//Wait for conversion

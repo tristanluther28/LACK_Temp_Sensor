@@ -39,8 +39,13 @@
 /******************* Macros **********************************/
 #define BIT_SET(byte, bit) (byte & (1<<bit))
 
+enum tempunits {KELVIN, CELSUIS, FAHRENHEIT};
+
+#define TEMP_CAL_OFFSET 334
+
 /******************* Function Declarations *******************/
 void ADC_Init();
+float ADC_Get_Temp(enum tempunits);
 uint16_t ADC_Value();
 
 #endif
